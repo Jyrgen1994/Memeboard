@@ -20,12 +20,55 @@ data_table_settings = {
     ["sounds"] = {}
 }
 
-data_table_apply = {
-
+settings_dt = {
+    ["Layer 1"] = {
+        ["events"] = "",
+        ["sounds"] = "",
+    }
 }
 
 killing_blow = function (sound)
     
+end
+
+on_click_add_layer = function (self)
+    local bottom_layer = ""
+    local bot_layer_nr = 0
+    for index, child in ipairs({self:GetParent():GetChildren()}) do
+        local tokens = {}
+        if string.find(child:GetName(), "Layer ") then
+            for token in string.gmatch(child:GetName(),"[^%s]+") do
+                table.insert(tokens, token)
+            end
+            if tonumber(tokens[2]) > bot_layer_nr then
+                bot_layer_nr = tonumber(tokens[2])
+                bottom_layer = child
+            end
+        end
+    end
+    local next_layer = create_frame_with_settings("Frame", "Layer " .. tostring(bot_layer_nr + 1), "TOP", self:GetParent(), {bottom_layer:GetWidth(), 75}, 1, nil)
+    next_layer:SetPoint("TOP", 0, - (25 + bot_layer_nr*bottom_layer:GetHeight()))
+    
+    local dropdown_add_sound = create_drop_down_menu("Frame", "addSoundDropDown "..tostring(bot_layer_nr + 1), "LEFT", next_layer, {100,25}, "", {150, 0}, "sound")
+    local dropdown_add_event = create_drop_down_menu("Frame", "addSoundDropDownEvent"..tostring(bot_layer_nr + 1), "RIGHT", next_layer, {100,25}, "", {-150, 0}, "event")
+
+end
+
+local on_click_remove_layer = function (self)
+    local bottom_layer = ""
+    local bot_layer_nr = 0
+    for index, child in ipairs({self:GetParent():GetChildren()}) do
+        local tokens = {}
+        if string.find(child:GetName(), "Layer ") then
+            for token in string.gmatch(child:GetName(),"[^%s]+") do
+                table.insert(tokens, token)
+            end
+            if tonumber(tokens[2]) > bot_layer_nr then
+                bot_layer_nr = tonumber(tokens[2])
+                bottom_layer = child
+            end
+        end
+    end
 end
 
 on_click_dd = function (self)
@@ -53,7 +96,7 @@ end
 local Load = function(self)
 	self:UnregisterEvent("VARIABLES_LOADED")
     --center frame and show it initally
-    self:SetPoint("CENTER",0,0)
+    self:SetPoint("CENTER")
     self:Show()
     --self:Hide()
     child_to_show = get_child(self, "AddNewSoundFrame")
@@ -150,7 +193,7 @@ get_child = function (frame, name)
 end
 
 
-local create_frame_with_settings = function (frame_type, frame_name, frame_placement, parent, size, alpha, texture_info)
+create_frame_with_settings = function (frame_type, frame_name, frame_placement, parent, size, alpha, texture_info)
     local frame = CreateFrame(frame_type, frame_name, parent)
     local texture = frame:CreateTexture(nil,"BACKGROUND")
 
@@ -161,6 +204,7 @@ local create_frame_with_settings = function (frame_type, frame_name, frame_place
         frame:RegisterForDrag("LeftButton")
         frame:SetScript("OnDragStart", frame.StartMoving)
         frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+        frame:SetPoint("CENTER")
     else
         frame:SetPoint(frame_placement ,parent, frame_placement)
     end
@@ -188,7 +232,7 @@ local create_frame_with_settings = function (frame_type, frame_name, frame_place
     return frame
 end
 
-local create_drop_down_menu = function (frame_type, frame_name, dd_anchor, parent_frame, frame_size, dd_title, dd_offset, data_type)
+create_drop_down_menu = function (frame_type, frame_name, dd_anchor, parent_frame, frame_size, dd_title, dd_offset, data_type)
     local drop_down_frame = CreateFrame(frame_type, frame_name, parent_frame)
     local dd_arrow = CreateFrame("Button", "DropDownArrow", drop_down_frame)
     local title = drop_down_frame:CreateFontString(drop_down_frame, "OVERLAY", "GameFontNormal")
@@ -226,7 +270,7 @@ local create_drop_down_menu = function (frame_type, frame_name, dd_anchor, paren
     drop_down_frame = init_dd(drop_down_frame, data_table)
 
     local diff = math.abs(600/2 - drop_down_frame:GetWidth())
-    if dd_anchor == "TOPLEFT" then
+    if dd_anchor == "LEFT" then
         if diff > 0 then
             drop_down_frame:SetPoint(dd_anchor, diff - 30, dd_offset[2])
         else
@@ -368,11 +412,39 @@ button_replace_sound:SetNormalFontObject("GameFontNormal")
 button_replace_sound:SetScript("OnClick", click_replace_sound)
 
 
+-- add layer button
+local button_add_layer = create_frame_with_settings("Button", "addLayer", "BOTTOM", new_sound_frame, {40, 40}, 1, "Interface\\AddOns\\Memeboard\\TGA\\plus_sign.tga")
+button_add_layer:SetPoint("BOTTOM", -20, 0)
+button_add_layer:SetScript("OnClick", on_click_add_layer)
+
+-- remove layer button
+local button_remove_layer = create_frame_with_settings("Button", "removeLater", "BOTTOM", new_sound_frame, {40, 40}, 1, "Interface\\AddOns\\Memeboard\\TGA\\minus_sign.tga")
+button_remove_layer:SetPoint("BOTTOM", 20, 0)
+button_remove_layer:SetScript("OnClick", on_click_remove_layer)
+
+
+--base layer
+
+local layer_one = create_frame_with_settings("Frame", "Layer 1", "TOP", new_sound_frame, {frame:GetWidth(), 75}, 1, nil)
+layer_one:SetPoint("TOP", 0, -top_frame:GetHeight())
+
+
+
+
+
+
+
+
+
+
+
+
 
 --##################################### DROP DOWN MENU STUFF ###########################################################
 --Drop down menu Add Sounds
-local dropdown_add_sound = create_drop_down_menu("Frame", "addSoundDropDown", "TOPLEFT", new_sound_frame, {100,25}, "Meme Sound:", {150, -75}, "sound")
-local dropdown_add_event = create_drop_down_menu("Frame", "addSoundDropDownEvent", "TOPRIGHT", new_sound_frame, {100,25}, "Event to add to:", {-150, -75}, "event")
+local dropdown_add_sound = create_drop_down_menu("Frame", "addSoundDropDown", "LEFT", layer_one, {100,25}, "Meme Sound:", {150, 0}, "sound")
+local dropdown_add_event = create_drop_down_menu("Frame", "addSoundDropDownEvent", "RIGHT", layer_one, {100,25}, "Event to add to:", {-150, 0}, "event")
+
 
 
 --################### CREATE SOME B ORDERS ###################
